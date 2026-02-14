@@ -236,7 +236,7 @@ export const PredictionMarket: React.FC<PredictionMarketProps> = ({ onClose }) =
            {/* 实时数据流 (占满剩余空间 - 占据半个屏幕视觉重心) */}
            <div className="flex-1 bg-black border-2 border-[#F7931A]/30 p-4 overflow-hidden flex flex-col shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] relative">
               <div className="absolute top-0 left-0 right-0 bg-[#F7931A]/10 border-b border-[#F7931A]/30 p-1 px-2 flex justify-between items-center z-10 backdrop-blur-sm">
-                 <span className="text-[10px] uppercase font-black text-[#F7931A] animate-pulse">>> LIVE_DATA_STREAM_FEED</span>
+                 <span className="text-[10px] uppercase font-black text-[#F7931A] animate-pulse">&gt;&gt; LIVE_DATA_STREAM_FEED</span>
                  <span className="text-[9px] text-[#F7931A]/70">RECEIVING...</span>
               </div>
               <div className="flex-1 overflow-y-auto pt-8 space-y-1.5 custom-scrollbar">
