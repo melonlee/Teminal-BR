@@ -61,14 +61,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ player, dispatch, di
         <button 
           disabled={disabled}
           onClick={() => handleAction({ type: 'SEARCH', payload: { playerId: player.id } })}
-          className={`${btnClass} col-span-1 border-[#FF4500] text-[#FF4500] hover:bg-[#FF4500] hover:text-white shadow-[2px_2px_0px_rgba(255,69,0,0.2)]`}
+          className={`${btnClass} col-span-1 border-[#F7931A] text-[#F7931A] hover:bg-[#F7931A] hover:text-white shadow-[2px_2px_0px_rgba(247,147,26,0.2)]`}
         >
           [F] SCAN
         </button>
 
         <button 
-          disabled={disabled}
-          onClick={() => handleAction({ type: 'NEXT_TURN' })}
+          // 此按钮现在继承了 "FORCE_NEXT" 的逻辑 (SKIP_TURN)，并且不被 disabled 属性禁用
+          // 这意味着它既是正常的结束回合按钮，也是防止游戏卡死的强制推进按钮
+          disabled={false}
+          onClick={() => handleAction({ type: 'SKIP_TURN', payload: { playerId: player.id } })}
           className={`${btnClass} col-span-2 bg-white text-black hover:bg-gray-400 hover:text-white shadow-[2px_2px_0px_rgba(255,255,255,0.2)]`}
         >
           [SPACE] END_TURN
@@ -76,16 +78,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ player, dispatch, di
       </div>
 
       {/* 调试/高级指令 */}
-      <div className="w-full">
+      <div className="w-full flex gap-2 pt-2 border-t border-white/10 mt-2">
+        {/* Force Next 按钮已移除，功能合并至 END_TURN */}
+
         <button 
-          onClick={() => {
-            if(window.confirm('CRITICAL: PURGE_ALL_AI?')) {
-              handleAction({ type: 'KILL_ALL_AI' });
-            }
-          }}
-          className="w-full border-2 border-red-600 text-red-600 p-2 font-black uppercase text-[10px] hover:bg-red-600 hover:text-white transition-all shadow-[2px_2px_0px_rgba(220,38,38,0.2)]"
+          disabled={false}
+          onClick={() => handleAction({ type: 'KILL_ALL_AI' })}
+          className="relative z-10 flex-1 border-2 border-[#F7931A] text-[#F7931A] p-2 font-black uppercase text-[10px] hover:bg-[#F7931A] hover:text-white transition-all shadow-[2px_2px_0px_rgba(247,147,26,0.2)] cursor-pointer pointer-events-auto"
         >
-          [!] PURGE_HOSTILES (DEBUG)
+          [☠] KILL_ALL_AI
         </button>
       </div>
     </div>

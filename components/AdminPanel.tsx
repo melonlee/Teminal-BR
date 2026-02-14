@@ -29,11 +29,6 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   };
 
-  const forceNextTurn = () => {
-    dispatch({ type: 'SKIP_TURN', payload: { playerId: state.players[state.activePlayerIndex]?.id || '' } });
-    onClose();
-  };
-
   const addNewItem = (catIdx: number, type: ItemType) => {
     const newItem: LootPoolItem = {
       id: `custom-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
@@ -68,19 +63,13 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       <div className="flex-none bg-black border-b-4 border-white p-8">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="text-4xl font-black italic text-[#FF4500] leading-none">SYSTEM_ADMIN // MATRIX_EDITOR</h1>
+            <h1 className="text-4xl font-black italic text-[#F7931A] leading-none">SYSTEM_ADMIN // MATRIX_EDITOR</h1>
             <p className="text-[10px] opacity-40 mt-2 uppercase tracking-widest font-bold">Root_Access: Enabled // Version: 2.3.0-DebugReady</p>
           </div>
           <div className="flex gap-4">
             <button 
-              onClick={forceNextTurn}
-              className="border-2 border-yellow-500 text-yellow-500 px-6 py-3 font-black hover:bg-yellow-500 hover:text-black transition-all uppercase text-xs"
-            >
-              [>] FORCE_NEXT_TURN
-            </button>
-            <button 
               onClick={purgeAi}
-              className="border-2 border-red-600 text-red-600 px-6 py-3 font-black hover:bg-red-600 hover:text-white transition-all uppercase text-xs"
+              className="border-2 border-[#F7931A] text-[#F7931A] px-6 py-3 font-black hover:bg-[#F7931A] hover:text-white transition-all uppercase text-xs"
             >
               [!] PURGE_ALL_AI
             </button>
@@ -98,13 +87,13 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="max-w-6xl mx-auto space-y-12">
           
           {/* 全局参数调节区 */}
-          <div className="border-4 border-[#FF4500] p-8 bg-[#FF4500]/5 shadow-[0_0_20px_rgba(255,69,0,0.1)]">
-            <h2 className="text-2xl font-black text-[#FF4500] mb-6 uppercase italic tracking-tighter">Global_System_Parameters</h2>
+          <div className="border-4 border-[#F7931A] p-8 bg-[#F7931A]/5 shadow-[0_0_20px_rgba(247,147,26,0.1)]">
+            <h2 className="text-2xl font-black text-[#F7931A] mb-6 uppercase italic tracking-tighter">Global_System_Parameters</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
                 <div className="flex justify-between items-baseline">
                   <span className="text-sm font-black uppercase opacity-60">Scan_Success_Probability</span>
-                  <span className="text-2xl font-black text-[#FF4500]">{searchRate}%</span>
+                  <span className="text-2xl font-black text-[#F7931A]">{searchRate}%</span>
                 </div>
                 <input 
                   type="range" 
@@ -113,7 +102,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   step="1"
                   value={searchRate}
                   onChange={(e) => handleRateChange(parseInt(e.target.value))}
-                  className="w-full accent-[#FF4500] bg-white/10 h-2 appearance-none cursor-pointer"
+                  className="w-full accent-[#F7931A] bg-white/10 h-2 appearance-none cursor-pointer"
                 />
                 <p className="text-[10px] opacity-40 uppercase italic">影响玩家执行 [SCAN_ZONE] 指令时成功探测到物资的几率。</p>
               </div>
@@ -124,7 +113,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
 
           {state.phase !== 'WAITING' && (
-            <div className="bg-red-600/20 text-red-500 p-4 font-bold border-2 border-red-600 shadow-[4px_4px_0px_#red-600] uppercase text-xs tracking-tighter">
+            <div className="bg-[#F7931A]/20 text-[#F7931A] p-4 font-bold border-2 border-[#F7931A] shadow-[4px_4px_0px_#F7931A] uppercase text-xs tracking-tighter">
               CRITICAL_WARNING: 游戏会话进行中。修改将在下一次系统初始化时生效。
             </div>
           )}
@@ -145,7 +134,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           newCfg[catIdx].weight = parseInt(e.target.value) || 0;
                           setConfig(newCfg);
                         }}
-                        className="bg-black border border-white/40 p-1 w-20 text-center text-[#FF4500] font-bold focus:border-[#FF4500] outline-none"
+                        className="bg-black border border-white/40 p-1 w-20 text-center text-[#F7931A] font-bold focus:border-[#F7931A] outline-none"
                       />
                     </div>
                   </div>
@@ -175,7 +164,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         type="text" 
                         value={item.name} 
                         onChange={e => updateItem(catIdx, itemIdx, 'name', e.target.value)}
-                        className="bg-transparent border-b border-white/10 w-full text-xs font-bold text-white focus:border-[#FF4500] outline-none"
+                        className="bg-transparent border-b border-white/10 w-full text-xs font-bold text-white focus:border-[#F7931A] outline-none"
                       />
                     </div>
                     <div className="col-span-1">
@@ -183,7 +172,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         type="number" 
                         value={item.weight} 
                         onChange={e => updateItem(catIdx, itemIdx, 'weight', parseInt(e.target.value) || 0)}
-                        className="bg-transparent border-b border-white/10 w-full text-center text-xs text-[#FF4500] outline-none font-bold"
+                        className="bg-transparent border-b border-white/10 w-full text-center text-xs text-[#F7931A] outline-none font-bold"
                       />
                     </div>
                     <div className="col-span-1">
@@ -213,7 +202,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                     <div className="col-span-1 text-right">
                       <button 
                         onClick={() => removeItem(catIdx, itemIdx)}
-                        className="text-red-600 opacity-20 group-hover:opacity-100 font-bold hover:bg-red-600 hover:text-white px-3 py-1 transition-all"
+                        className="text-[#F7931A] opacity-20 group-hover:opacity-100 font-bold hover:bg-[#F7931A] hover:text-white px-3 py-1 transition-all"
                       >
                         [X]
                       </button>
@@ -230,7 +219,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="max-w-6xl mx-auto">
           <button 
             onClick={saveConfig}
-            className="w-full bg-[#FF4500] text-white py-6 text-2xl font-black hover:bg-white hover:text-black transition-all shadow-[10px_10px_0px_rgba(255,255,255,0.2)] active:shadow-none active:translate-x-1 active:translate-y-1 border-2 border-white"
+            className="w-full bg-[#F7931A] text-white py-6 text-2xl font-black hover:bg-white hover:text-black transition-all shadow-[10px_10px_0px_rgba(255,255,255,0.2)] active:shadow-none active:translate-x-1 active:translate-y-1 border-2 border-white"
           >
             COMMIT_CHANGES_TO_CENTRAL_CORE
           </button>

@@ -30,12 +30,12 @@ export const LootModal: React.FC<LootModalProps> = ({ onHoverItem }) => {
       <div 
         onMouseEnter={() => onHoverItem(item)}
         onMouseLeave={() => onHoverItem(null)}
-        className="border-8 border-white bg-black p-12 max-w-lg w-full relative shadow-[30px_30px_0px_#FF4500]"
+        className="border-8 border-white bg-black p-12 max-w-lg w-full relative shadow-[30px_30px_0px_#F7931A]"
       >
         {/* 背景装饰线 */}
         <div className="absolute inset-0 opacity-5 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_4px,white_4px,white_8px)]" />
         
-        <h2 className="text-3xl font-black italic border-b-4 border-white mb-10 pb-4 text-[#FF4500] uppercase tracking-tighter">
+        <h2 className="text-3xl font-black italic border-b-4 border-white mb-10 pb-4 text-[#F7931A] uppercase tracking-tighter">
           {t.TITLE}
         </h2>
 
@@ -47,7 +47,7 @@ export const LootModal: React.FC<LootModalProps> = ({ onHoverItem }) => {
             </div>
           </div>
 
-          <div className="bg-white/5 p-6 border-2 border-white/10 italic text-lg leading-relaxed border-l-8 border-l-[#FF4500]">
+          <div className="bg-white/5 p-6 border-2 border-white/10 italic text-lg leading-relaxed border-l-8 border-l-[#F7931A]">
             "{item.description}"
           </div>
 
@@ -64,7 +64,7 @@ export const LootModal: React.FC<LootModalProps> = ({ onHoverItem }) => {
         <div className="flex flex-col gap-4">
           <button 
             onClick={() => { dispatch({ type: 'TAKE_LOOT', payload: { playerId: humanPlayer!.id } }); onHoverItem(null); }}
-            className="bg-white text-black py-8 text-3xl font-black hover:bg-[#FF4500] hover:text-white transition-all transform active:scale-95 uppercase tracking-widest"
+            className="bg-white text-black py-8 text-3xl font-black hover:bg-[#F7931A] hover:text-white transition-all transform active:scale-95 uppercase tracking-widest"
           >
             {t.TAKE}
           </button>
@@ -77,7 +77,7 @@ export const LootModal: React.FC<LootModalProps> = ({ onHoverItem }) => {
         </div>
 
         {humanPlayer && humanPlayer.inventory.length >= 8 && (
-          <div className="mt-6 text-center text-red-500 text-sm font-black animate-pulse uppercase tracking-widest">
+          <div className="mt-6 text-center text-[#F7931A] text-sm font-black animate-pulse uppercase tracking-widest">
             !! {t.FULL} !!
           </div>
         )}

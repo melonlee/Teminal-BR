@@ -27,7 +27,7 @@ export const Inventory: React.FC<InventoryProps> = ({ player, isHumanTurn, dispa
             key={item.id}
             onMouseEnter={() => onHoverItem(item)}
             onMouseLeave={() => onHoverItem(null)}
-            className="w-full text-left p-3 border-2 border-white/10 hover:border-[#FF4500] hover:bg-white/5 transition-all flex justify-between group items-center bg-black/40"
+            className="w-full text-left p-3 border-2 border-white/10 hover:border-[#F7931A] hover:bg-white/5 transition-all flex justify-between group items-center bg-black/40"
           >
             <div className="flex flex-col min-w-0 flex-1">
               <span className={`text-lg font-black tracking-tighter truncate ${item.rarity === 'EPIC' ? 'text-purple-400' : (item.rarity === 'RARE' ? 'text-blue-400' : 'text-white')}`}>
@@ -40,14 +40,14 @@ export const Inventory: React.FC<InventoryProps> = ({ player, isHumanTurn, dispa
               <button 
                 disabled={!isHumanTurn}
                 onClick={() => dispatch({ type: 'USE_ITEM', payload: { playerId: player.id, itemId: item.id } })}
-                className="opacity-0 group-hover:opacity-100 uppercase text-xs bg-white text-black px-4 py-2 font-black transition-all hover:bg-[#FF4500] hover:text-white disabled:opacity-0"
+                className="opacity-0 group-hover:opacity-100 uppercase text-xs bg-white text-black px-4 py-2 font-black transition-all hover:bg-[#F7931A] hover:text-white disabled:opacity-0"
               >
                 [{item.type === 'WEAPON' || item.type === 'ARMOR' ? t.EQUIP : t.USE}]
               </button>
               <button 
                 disabled={!isHumanTurn}
                 onClick={() => dispatch({ type: 'DROP_ITEM', payload: { playerId: player.id, itemId: item.id } })}
-                className="opacity-0 group-hover:opacity-100 uppercase text-xs text-red-500 border border-red-500 px-3 py-2 font-black transition-all hover:bg-red-500 hover:text-white disabled:opacity-0"
+                className="opacity-0 group-hover:opacity-100 uppercase text-xs text-[#F7931A] border border-[#F7931A] px-3 py-2 font-black transition-all hover:bg-[#F7931A] hover:text-white disabled:opacity-0"
               >
                 {t.DROP}
               </button>

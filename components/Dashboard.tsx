@@ -11,6 +11,8 @@ import { CombatPanel } from './CombatPanel';
 import { Inventory } from './Inventory';
 import { Item } from '../types/game';
 import { decideAiAction } from '../utils/aiLogic';
+import { AgentSetupModal } from './AgentSetupModal';
+import { PredictionMarket } from './PredictionMarket'; // 引入新组件
 
 const TRANSLATIONS = {
   zh: {
@@ -32,7 +34,8 @@ const TRANSLATIONS = {
     SAVE_EXIT: "保存并退出",
     RESTART: "重新开始",
     CANCEL: "返回",
-    ADMIN: "进入矩阵管理 [ADMIN]"
+    ADMIN: "进入矩阵管理 [ADMIN]",
+    MARKET: "预测市场" // 新增
   },
   en: {
     TITLE: "TACTICAL_VOID",
@@ -53,7 +56,8 @@ const TRANSLATIONS = {
     SAVE_EXIT: "SAVE & EXIT",
     RESTART: "RESTART",
     CANCEL: "CANCEL",
-    ADMIN: "ADMIN_MATRIX_ACCESS"
+    ADMIN: "ADMIN_MATRIX_ACCESS",
+    MARKET: "PREDICTION MARKET" // 新增
   }
 };
 
@@ -64,6 +68,7 @@ export const Dashboard: React.FC = () => {
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showMarket, setShowMarket] = useState(false); // 新增市场模态框状态
   const [hasSave, setHasSave] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<Item | null>(null);
   const [godMode, setGodMode] = useState(false);
@@ -75,6 +80,8 @@ export const Dashboard: React.FC = () => {
   const humanPlayer = state.players.find(p => !p.isAi);
   const isGameOver = state.phase === 'GAME_OVER';
   const activePlayer = state.players[state.activePlayerIndex];
+
+  const isHumanTurn = activePlayer && !activePlayer.isAi && state.phase === 'ACTIVE' && !isAiProcessing;
 
   useEffect(() => {
     const save = localStorage.getItem(STORAGE_KEY);
@@ -127,7 +134,7 @@ export const Dashboard: React.FC = () => {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#050505] relative overflow-hidden p-10 terminal-scanline">
         <div className="z-10 border-8 border-white p-20 text-center bg-black min-w-[700px] shadow-[30px_30px_0px_rgba(255,255,255,0.1)]">
-          <h1 className="text-8xl font-black italic tracking-tighter text-[#FF4500] mb-8 text-glow leading-none">{t.TITLE}</h1>
+          <h1 className="text-8xl font-black italic tracking-tighter text-[#F7931A] mb-8 text-glow leading-none">{t.TITLE}</h1>
           <p className="mb-20 font-mono text-2xl opacity-60 tracking-[0.4em] uppercase">{t.SUBTITLE}</p>
           
           <div className="flex flex-col gap-8 max-w-lg mx-auto">
@@ -140,7 +147,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
-          <button onClick={() => setShowAdmin(true)} className="text-sm text-white/30 hover:text-[#FF4500] hover:opacity-100 uppercase transition-all tracking-[0.6em] py-4 px-10 border border-transparent hover:border-white/20 hover:bg-white/5 backdrop-blur-md font-bold">
+          <button onClick={() => setShowAdmin(true)} className="text-sm text-white/30 hover:text-[#F7931A] hover:opacity-100 uppercase transition-all tracking-[0.6em] py-4 px-10 border border-transparent hover:border-white/20 hover:bg-white/5 backdrop-blur-md font-bold">
             --- ROOT_ACCESS_GRANTED [{t.ADMIN}] ---
           </button>
         </div>
@@ -150,21 +157,31 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  const isHumanTurn = activePlayer && !activePlayer.isAi && !isAiProcessing && !isGameOver && state.phase === 'ACTIVE';
-
   return (
     <div className="h-screen flex flex-col p-6 gap-6 bg-[#050505] text-white font-mono terminal-scanline select-none overflow-hidden text-base">
       <LootModal onHoverItem={setHoveredItem} />
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      {showMarket && <PredictionMarket onClose={() => setShowMarket(false)} />}
       
-      <header className="flex justify-between items-end border-b-8 border-[#FF4500] pb-4 flex-none">
+      {/* 新增：AI 配置弹窗，在 SETUP 阶段显示 */}
+      {state.phase === 'SETUP' && <AgentSetupModal />}
+      
+      <header className="flex justify-between items-end border-b-8 border-[#F7931A] pb-4 flex-none">
         <div className="flex items-end gap-10">
           <div>
-            <h2 className="text-5xl font-black italic text-[#FF4500] leading-none text-glow uppercase tracking-tighter">{t.TITLE}</h2>
+            <h2 className="text-5xl font-black italic text-[#F7931A] leading-none text-glow uppercase tracking-tighter">{t.TITLE}</h2>
             <div className="text-xs opacity-40 uppercase tracking-[0.2em] mt-2 font-black">NODE_{activePlayer?.id.slice(-2)} // {activePlayer?.name}</div>
           </div>
         </div>
         <div className="flex gap-12 items-center text-right">
+          {/* 新增：预测市场按钮 */}
+          <button 
+            onClick={() => setShowMarket(true)}
+            className="border-2 border-[#00FF41] text-[#00FF41] px-4 py-1 text-xs font-black hover:bg-[#00FF41] hover:text-black transition-all uppercase tracking-widest shadow-[0_0_10px_rgba(0,255,65,0.2)]"
+          >
+            [{t.MARKET}]
+          </button>
+
           <div><div className="text-xs opacity-40 uppercase font-black">{t.CYCLE}</div><div className="text-4xl font-black">{state.turnCount}</div></div>
           <div><div className="text-xs opacity-40 uppercase font-black">{t.ALIVE}</div><div className="text-4xl font-black">{state.players.filter(p=>p.status==='ALIVE').length}</div></div>
           <button onClick={() => setShowExitModal(true)} className="border-4 border-white/40 px-6 py-2 text-sm font-black hover:bg-white hover:text-black transition-all uppercase tracking-widest">[{t.EXIT}]</button>
@@ -186,7 +203,7 @@ export const Dashboard: React.FC = () => {
             <GridMap state={state} humanPlayer={humanPlayer} godMode={godMode} />
             
             {isAiProcessing && (
-              <div className="absolute top-10 right-10 bg-[#FF4500] text-black px-8 py-3 text-xl font-black animate-pulse shadow-[0_0_30px_#FF4500] border-4 border-white z-20">
+              <div className="absolute top-10 right-10 bg-[#F7931A] text-black px-8 py-3 text-xl font-black animate-pulse shadow-[0_0_30px_#F7931A] border-4 border-white z-20">
                 [{t.SYSTEM_BUSY}]
               </div>
             )}
@@ -205,10 +222,11 @@ export const Dashboard: React.FC = () => {
           <div className="min-h-0 flex flex-col border-4 border-white p-6 bg-black shadow-[10px_10px_0px_rgba(255,255,255,0.05)]">
             <h3 className="text-sm font-black border-b-2 border-white/20 mb-4 pb-2 flex justify-between uppercase tracking-widest">
               <span>{t.PROFILE}</span>
-              {isHumanTurn && <span className="text-[#FF4500] animate-pulse">{t.YOUR_TURN}</span>}
+              {isHumanTurn && <span className="text-[#F7931A] animate-pulse">{t.YOUR_TURN}</span>}
             </h3>
             {humanPlayer && (
               <div className={humanPlayer.status === 'DEAD' ? 'opacity-30 grayscale' : 'space-y-2'}>
+                {/* 恢复红色 */}
                 <StatBar label="HP" value={humanPlayer.stats.hp} maxValue={humanPlayer.stats.maxHp} color="bg-red-600" />
                 <StatBar label="HUNGER" value={humanPlayer.stats.hunger} maxValue={humanPlayer.stats.maxHunger} color="bg-yellow-600" />
                 <StatBar label="THIRST" value={humanPlayer.stats.thirst} maxValue={humanPlayer.stats.maxThirst} color="bg-blue-600" />
@@ -237,10 +255,10 @@ export const Dashboard: React.FC = () => {
 
       {showExitModal && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[500] backdrop-blur-md animate-in fade-in duration-300">
-          <div className="border-8 border-white p-16 bg-black text-center min-w-[600px] shadow-[20px_20px_0px_#FF4500]">
-            <h3 className="text-5xl font-black mb-12 text-[#FF4500] uppercase italic tracking-tighter leading-none">{t.EXIT_CONFIRM}</h3>
+          <div className="border-8 border-white p-16 bg-black text-center min-w-[600px] shadow-[20px_20px_0px_#F7931A]">
+            <h3 className="text-5xl font-black mb-12 text-[#F7931A] uppercase italic tracking-tighter leading-none">{t.EXIT_CONFIRM}</h3>
             <div className="flex flex-col gap-6">
-              <button onClick={() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); dispatch({ type: 'EXIT_TO_MENU' }); setShowExitModal(false); }} className="bg-white text-black py-8 text-3xl font-black hover:bg-[#FF4500] hover:text-white transition-all uppercase">{t.SAVE_EXIT}</button>
+              <button onClick={() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); dispatch({ type: 'EXIT_TO_MENU' }); setShowExitModal(false); }} className="bg-white text-black py-8 text-3xl font-black hover:bg-[#F7931A] hover:text-white transition-all uppercase">{t.SAVE_EXIT}</button>
               <button onClick={() => { dispatch({ type: 'START_GAME', payload: { humanCount: 1, aiCount: 7 } }); setShowExitModal(false); }} className="border-4 border-white text-white py-8 text-3xl font-black hover:bg-white hover:text-black transition-all uppercase">{t.RESTART}</button>
               <button onClick={() => setShowExitModal(false)} className="text-lg opacity-50 hover:opacity-100 uppercase mt-4 tracking-[0.5em] font-black underline underline-offset-8 transition-all">{t.CANCEL}</button>
             </div>
@@ -250,14 +268,14 @@ export const Dashboard: React.FC = () => {
 
       {isGameOver && (
         <div className="fixed inset-0 bg-black/98 flex flex-col items-center justify-center z-[1000] p-6 md:p-12 lg:p-20 animate-in fade-in zoom-in duration-700">
-          <div className="border-[12px] md:border-[16px] border-[#FF4500] p-12 md:p-24 text-center bg-black max-w-full lg:max-w-6xl shadow-[0_0_150px_rgba(255,69,0,0.6)] flex flex-col items-center">
-            <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-black italic mb-4 text-[#FF4500] uppercase leading-none tracking-tighter text-glow break-words max-w-full text-center">
+          <div className="border-[12px] md:border-[16px] border-[#F7931A] p-12 md:p-24 text-center bg-black max-w-full lg:max-w-6xl shadow-[0_0_150px_rgba(247,147,26,0.6)] flex flex-col items-center">
+            <h2 className="text-6xl md:text-8xl lg:text-[10rem] font-black italic mb-4 text-[#F7931A] uppercase leading-none tracking-tighter text-glow break-words max-w-full text-center">
               {t.MISSION_END}
             </h2>
             <div className="text-2xl md:text-5xl font-black mb-12 md:mb-16 border-y-4 md:border-y-8 border-white py-6 md:py-12 uppercase tracking-[0.3em] md:tracking-[0.6em] w-full">
               {t.SURVIVOR}: {state.winner?.name || 'NONE'}
             </div>
-            <button onClick={() => dispatch({ type: 'START_GAME', payload: { humanCount: 1, aiCount: 7 } })} className="w-full max-w-2xl bg-white text-black py-6 md:py-12 text-2xl md:text-5xl font-black hover:bg-[#FF4500] hover:text-white transition-all shadow-[10px_10px_0px_rgba(255,255,255,0.2)] md:shadow-[20px_20px_0px_rgba(255,255,255,0.2)] uppercase">
+            <button onClick={() => dispatch({ type: 'START_GAME', payload: { humanCount: 1, aiCount: 7 } })} className="w-full max-w-2xl bg-white text-black py-6 md:py-12 text-2xl md:text-5xl font-black hover:bg-[#F7931A] hover:text-white transition-all shadow-[10px_10px_0px_rgba(255,255,255,0.2)] md:shadow-[20px_20px_0px_rgba(255,255,255,0.2)] uppercase">
               {t.REBOOT}
             </button>
           </div>

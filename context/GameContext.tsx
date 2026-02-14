@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import { GameState, GameAction } from '../types/game';
 import { gameReducer } from '../reducers/gameReducer';
@@ -17,7 +16,8 @@ const initialState: GameState = {
   // Fix: Added missing 'settings' property to satisfy GameState interface
   settings: {
     searchSuccessRate: 0.5
-  }
+  },
+  userBalance: 1000
 };
 
 /**

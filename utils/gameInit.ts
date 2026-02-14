@@ -59,6 +59,9 @@ export const generateInitialState = (humanCount: number, aiCount: number): GameS
     const loadout = getInitialLoadout();
     const playerId = `p-${i}`;
 
+    // 初始股价：随机 10.00 到 50.00
+    const startPrice = parseFloat((Math.random() * 40 + 10).toFixed(2));
+
     const player: Player = {
       id: playerId,
       name: isAi ? `BOT_${i - humanCount + 1}` : `USER_${i + 1}`,
@@ -73,7 +76,15 @@ export const generateInitialState = (humanCount: number, aiCount: number): GameS
       },
       inventory: [loadout.bread, loadout.water],
       position: { x, y },
-      status: 'ALIVE'
+      status: 'ALIVE',
+      // 初始化市场数据
+      market: {
+        price: startPrice,
+        lastPrice: startPrice,
+        history: [startPrice, startPrice, startPrice, startPrice], // 预填充一些数据以便绘图
+        sharesOwned: 0,
+        trend: 'FLAT'
+      }
     };
 
     players.push(player);
@@ -85,11 +96,13 @@ export const generateInitialState = (humanCount: number, aiCount: number): GameS
     grid,
     turnCount: 1,
     activePlayerIndex: 0,
-    log: ['>>> TERMINAL BOOTED.', '>>> OPERATION: NEON_VOID INITIATED.', '>>> ALL UNITS DEPLOYED.'],
-    phase: 'ACTIVE',
+    log: ['>>> TERMINAL BOOTED.', '>>> OPERATION: NEON_VOID INITIATED.', '>>> MARKET SYSTEM ONLINE.'],
+    phase: 'SETUP',
     language: 'zh',
     settings: {
-      searchSuccessRate: 0.5 // 默认 50% 成功率
-    }
+      searchSuccessRate: 0.5 
+    },
+    // 初始资金 1000 信用点
+    userBalance: 1000
   };
 };

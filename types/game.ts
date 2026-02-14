@@ -45,6 +45,15 @@ export interface PlayerStats {
   maxThirst: number;
 }
 
+// 新增市场数据接口
+export interface MarketData {
+  price: number;
+  lastPrice: number;
+  history: number[]; // 存储最近 20 次价格历史用于绘图
+  sharesOwned: number; // 用户持有的份额
+  trend: 'UP' | 'DOWN' | 'FLAT';
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -54,6 +63,8 @@ export interface Player {
   inventory: Item[];
   position: { x: number; y: number };
   status: 'ALIVE' | 'DEAD';
+  // 每个玩家关联的市场数据
+  market: MarketData;
 }
 
 export interface GridCell {
@@ -69,17 +80,25 @@ export interface GameSettings {
   searchSuccessRate: number; // 0.0 到 1.0 之间
 }
 
+export interface AiConfig {
+  systemPrompt: string;
+  apiKey: string;
+}
+
 export interface GameState {
   players: Player[];
   grid: GridCell[][];
   turnCount: number;
   activePlayerIndex: number;
   log: string[];
-  phase: 'WAITING' | 'ACTIVE' | 'LOOTING' | 'GAME_OVER';
+  phase: 'WAITING' | 'SETUP' | 'ACTIVE' | 'LOOTING' | 'GAME_OVER';
   pendingLoot?: Item | null;
   winner?: Player | null;
   language: Language;
-  settings: GameSettings; // 新增：全局设置
+  settings: GameSettings;
+  aiConfig?: AiConfig;
+  // 新增：用户在预测市场的现金余额
+  userBalance: number;
 }
 
 export type GameAction =
@@ -87,6 +106,7 @@ export type GameAction =
   | { type: 'LOAD_GAME'; payload: GameState }
   | { type: 'SET_LANGUAGE'; payload: Language }
   | { type: 'EXIT_TO_MENU' }
+  | { type: 'INIT_AGENT'; payload: AiConfig }
   | { type: 'MOVE'; payload: { playerId: string; direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' } }
   | { type: 'SEARCH'; payload: { playerId: string } }
   | { type: 'TAKE_LOOT'; payload: { playerId: string } }
@@ -98,5 +118,7 @@ export type GameAction =
   | { type: 'PICKUP_ITEM'; payload: { playerId: string; itemId: string } }
   | { type: 'SKIP_TURN'; payload: { playerId: string } }
   | { type: 'KILL_ALL_AI' }
-  | { type: 'UPDATE_SETTINGS'; payload: Partial<GameSettings> } // 新增：更新设置动作
-  | { type: 'NEXT_TURN' };
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<GameSettings> }
+  | { type: 'NEXT_TURN' }
+  // 新增：购买股票
+  | { type: 'MARKET_BUY'; payload: { playerId: string; amount: number } };

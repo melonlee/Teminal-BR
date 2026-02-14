@@ -6,6 +6,38 @@ import { generateLoot } from '../utils/lootSystem';
 
 const GRID_SIZE = 8;
 
+// 辅助函数：更新股价
+// impact: 价格变动百分比 (例如 0.05 代表涨 5%, -0.05 代表跌 5%)
+const updatePrice = (player: Player, impact: number, randomNoise: boolean = true): Player => {
+  if (player.status === 'DEAD') {
+    return {
+      ...player,
+      market: { ...player.market, price: 0, trend: 'DOWN', history: [...player.market.history, 0].slice(-20) }
+    };
+  }
+
+  // 添加随机市场波动噪音 (-1% 到 +1%)
+  const noise = randomNoise ? (Math.random() * 0.02 - 0.01) : 0;
+  const changePercent = impact + noise;
+  
+  let newPrice = player.market.price * (1 + changePercent);
+  newPrice = Math.max(0.1, parseFloat(newPrice.toFixed(2))); // 最低价格 0.1
+
+  const trend = newPrice > player.market.price ? 'UP' : (newPrice < player.market.price ? 'DOWN' : 'FLAT');
+  const newHistory = [...player.market.history, newPrice].slice(-20); // 保留最后20个数据点
+
+  return {
+    ...player,
+    market: {
+      ...player.market,
+      lastPrice: player.market.price,
+      price: newPrice,
+      history: newHistory,
+      trend
+    }
+  };
+};
+
 export const gameReducer = (state: GameState, action: GameAction): GameState => {
   const newLog = [...state.log];
   const addLog = (msg: string) => {
@@ -15,17 +47,14 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
   /**
    * 增强版回合推进逻辑
-   * 自动寻找下一个活着的玩家，如果绕回到原点则结束大回合
    */
   const getNextStateWithActivePlayer = (currentState: GameState): GameState => {
     let nextIndex = currentState.activePlayerIndex + 1;
     
-    // 如果已经遍历完所有玩家，触发下一轮环境结算
     if (nextIndex >= currentState.players.length) {
       return gameReducer({ ...currentState, activePlayerIndex: 0 }, { type: 'NEXT_TURN' });
     }
 
-    // 如果下一个玩家已经死亡，递归寻找下一个
     if (currentState.players[nextIndex].status === 'DEAD') {
       return getNextStateWithActivePlayer({ ...currentState, activePlayerIndex: nextIndex });
     }
@@ -49,27 +78,79 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
     case 'EXIT_TO_MENU':
       return { ...state, phase: 'WAITING' };
 
+    case 'INIT_AGENT':
+      addLog(state.language === 'zh' ? '指令确认：AI AGENT 已激活。' : 'COMMAND CONFIRMED: AI AGENT ACTIVATED.');
+      addLog(state.language === 'zh' ? '>>> 任务开始。祝好运。' : '>>> MISSION START. GOOD LUCK.');
+      return {
+        ...state,
+        aiConfig: action.payload,
+        phase: 'ACTIVE'
+      };
+
+    // 新增：购买股票逻辑
+    case 'MARKET_BUY': {
+      const { playerId, amount } = action.payload; // amount 是购买的金额
+      const pIdx = state.players.findIndex(p => p.id === playerId);
+      const player = state.players[pIdx];
+
+      if (!player || player.status === 'DEAD') {
+         // 简单的错误提示，实际UI可能不显示
+         return state;
+      }
+
+      if (state.userBalance < amount) return state;
+
+      const sharesToBuy = amount / player.market.price;
+      
+      const updatedPlayers = [...state.players];
+      
+      // 购买导致股价上涨 (模拟 Bonding Curve: 买入推高价格, 简单设为 +2% 每次购买)
+      const newPlayerState = updatePrice(player, 0.02, false);
+      newPlayerState.market.sharesOwned += sharesToBuy;
+      
+      updatedPlayers[pIdx] = newPlayerState;
+
+      addLog(state.language === 'zh' 
+        ? `MARKET: 买入 ${player.name} $${amount}。股价上涨。` 
+        : `MARKET: BOUGHT ${player.name} FOR $${amount}. PRICE UP.`);
+
+      return {
+        ...state,
+        userBalance: state.userBalance - amount,
+        players: updatedPlayers,
+        log: newLog
+      };
+    }
+
     case 'KILL_ALL_AI': {
       const human = state.players.find(p => !p.isAi);
-      let updatedGrid = state.grid.map(row => 
-        row.map(cell => ({ 
-          ...cell, 
-          players: cell.players.filter(pid => {
-            const p = state.players.find(sp => sp.id === pid);
-            return p && !p.isAi;
-          }) 
-        }))
-      );
-      
       const updatedPlayers = state.players.map(p => {
         if (p.isAi) {
-          return { ...p, status: 'DEAD' as const, stats: { ...p.stats, hp: 0 } };
+          // AI 死亡，股价归零
+          return { ...p, status: 'DEAD' as const, stats: { ...p.stats, hp: 0 }, market: { ...p.market, price: 0, trend: 'DOWN' as const } };
         }
         return p;
       });
 
       addLog(state.language === 'zh' ? 'ADMIN: 强制离线所有敌对 AI。' : 'ADMIN: PURGED ALL AI.');
-      return { ...state, players: updatedPlayers, grid: updatedGrid, phase: 'GAME_OVER', winner: human || null, activePlayerIndex: 0, log: newLog };
+      
+      let phase = state.phase;
+      let winner = state.winner;
+
+      if (human && human.status === 'ALIVE') {
+        phase = 'GAME_OVER';
+        winner = human;
+        addLog(state.language === 'zh' ? '系统: 威胁清除完毕。胜利。' : 'SYSTEM: THREATS ELIMINATED. VICTORY.');
+      }
+
+      return { 
+        ...state, 
+        players: updatedPlayers, 
+        phase: phase, 
+        winner: winner, 
+        activePlayerIndex: 0, 
+        log: newLog 
+      };
     }
 
     case 'MOVE': {
@@ -91,8 +172,10 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       }
 
       const updatedPlayers = [...state.players];
+      // 移动消耗体力，股价微小随机波动 (模拟活跃度)
+      const movedPlayer = updatePrice(player, 0.005); // 活跃 +0.5%
       updatedPlayers[playerIndex] = {
-        ...player,
+        ...movedPlayer,
         position: { x: newX, y: newY },
         stats: { ...player.stats, hunger: Math.max(0, player.stats.hunger - 2), thirst: Math.max(0, player.stats.thirst - 5) }
       };
@@ -115,9 +198,12 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       const isSuccess = Math.random() < successProb;
 
       const updatedPlayers = [...state.players];
+      // 搜索行为本身消耗资源，轻微利空，但如果成功则大涨
       updatedPlayers[pIdx] = { ...player, stats: { ...player.stats, hunger: Math.max(0, player.stats.hunger - 5) } };
 
       if (!isSuccess) {
+        // 搜索失败，股价微跌
+        updatedPlayers[pIdx] = updatePrice(updatedPlayers[pIdx], -0.01); 
         addLog(state.language === 'zh' ? `[${player.name}] 搜索无果。` : `[${player.name}] SEARCH FAILED.`);
         return getNextStateWithActivePlayer({ ...state, players: updatedPlayers });
       }
@@ -125,8 +211,10 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       const loot = generateLoot();
       if (!loot) return getNextStateWithActivePlayer({ ...state, players: updatedPlayers });
       
+      // 发现物资，股价大涨 +5%
+      updatedPlayers[pIdx] = updatePrice(updatedPlayers[pIdx], 0.05);
+
       if (!player.isAi) {
-        // 关键：人类搜寻到物资，进入 LOOTING 阶段
         return { ...state, players: updatedPlayers, phase: 'LOOTING', pendingLoot: loot, log: newLog };
       } else {
         if (player.inventory.length < 8) {
@@ -146,13 +234,14 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       const updatedPlayers = [...state.players];
       
       if (player.inventory.length < 8) {
-        updatedPlayers[pIdx] = { ...player, inventory: [...player.inventory, state.pendingLoot] };
+        // 成功获取装备，股价大涨
+        const lootPlayer = updatePrice(player, 0.05);
+        updatedPlayers[pIdx] = { ...lootPlayer, inventory: [...player.inventory, state.pendingLoot] };
         addLog(state.language === 'zh' ? `获得了 ${state.pendingLoot.name}。` : `ACQUIRED ${state.pendingLoot.name}.`);
       } else {
         addLog(state.language === 'zh' ? `背包已满，未能获得物品。` : `INV FULL, ITEM DISCARDED.`);
       }
 
-      // 关键修复：显式重置 phase 为 ACTIVE，确保 getNextStateWithActivePlayer 接收到的状态是干净的
       const intermediateState = { ...state, players: updatedPlayers, phase: 'ACTIVE' as const, pendingLoot: null };
       return getNextStateWithActivePlayer(intermediateState);
     }
@@ -176,24 +265,34 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       const updatedPlayers = [...state.players];
       const newHp = Math.max(0, target.stats.hp - damage);
       
-      updatedPlayers[targetIdx] = {
-        ...target,
-        stats: { ...target.stats, hp: newHp },
+      // 攻击者表现积极，股价上涨 +3%
+      let newAttacker = updatePrice(attacker, 0.03);
+      // 受害者受伤，股价下跌 -5% (如果死亡则会在下面处理)
+      let newTarget = updatePrice(target, -0.05);
+
+      newTarget = {
+        ...newTarget,
+        stats: { ...newTarget.stats, hp: newHp },
         status: newHp <= 0 ? 'DEAD' : 'ALIVE'
       };
 
-      addLog(state.language === 'zh' ? `${attacker.name} -> ${target.name} [-${damage}HP]` : `${attacker.name} -> ${target.name} [-${damage}HP]`);
-      
-      let updatedGrid = state.grid;
+      // 如果目标死亡，攻击者股价再次暴涨 +10%，目标股价归零
       if (newHp <= 0) {
-        addLog(state.language === 'zh' ? `${target.name} 已被淘汰。` : `${target.name} ELIMINATED.`);
-        updatedGrid = state.grid.map(row => row.map(cell => ({
-          ...cell,
-          players: cell.players.filter(pid => pid !== targetId)
-        })));
+        newAttacker = updatePrice(newAttacker, 0.10);
+        newTarget.market.price = 0;
+        newTarget.market.trend = 'DOWN';
       }
 
-      return getNextStateWithActivePlayer({ ...state, players: updatedPlayers, grid: updatedGrid });
+      updatedPlayers[attackerIdx] = newAttacker;
+      updatedPlayers[targetIdx] = newTarget;
+
+      addLog(state.language === 'zh' ? `${attacker.name} -> ${target.name} [-${damage}HP]` : `${attacker.name} -> ${target.name} [-${damage}HP]`);
+      
+      if (newHp <= 0) {
+        addLog(state.language === 'zh' ? `${target.name} 已被淘汰。` : `${target.name} ELIMINATED.`);
+      }
+
+      return getNextStateWithActivePlayer({ ...state, players: updatedPlayers });
     }
 
     case 'USE_ITEM': {
@@ -205,7 +304,11 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       if (!item) return getNextStateWithActivePlayer(state);
 
       const updatedPlayers = [...state.players];
-      const updatedPlayer = { ...player, inventory: [...player.inventory] };
+      
+      // 使用物品，生存几率增加，股价小涨 +2%
+      const usedItemPlayer = updatePrice(player, 0.02);
+
+      const updatedPlayer = { ...usedItemPlayer, inventory: [...player.inventory] };
       updatedPlayer.inventory.splice(itemIdx, 1);
 
       if (item.type === 'WEAPON' || item.type === 'ARMOR') {
@@ -234,7 +337,10 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
       if (!item || player.inventory.length >= 8) return getNextStateWithActivePlayer(state);
       
       const updatedPlayers = [...state.players];
-      updatedPlayers[pIdx] = { ...player, inventory: [...player.inventory, item] };
+      // 捡东西，股价涨
+      const pickedPlayer = updatePrice(player, 0.03);
+
+      updatedPlayers[pIdx] = { ...pickedPlayer, inventory: [...player.inventory, item] };
       const updatedGrid = state.grid.map((row, ry) => row.map((c, cx) => 
         (ry === y && cx === x) ? { ...c, items: c.items.filter(i => i.id !== itemId) } : c
       ));
@@ -268,13 +374,18 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
 
       let updatedPlayers = state.players.map(p => {
         if (p.status === 'DEAD') return p;
-        const stats = { ...p.stats, hunger: Math.max(0, p.stats.hunger - 1), thirst: Math.max(0, p.stats.thirst - 1) };
-        if (updatedGrid[p.position.y][p.position.x].isRestricted) {
-          updatedGrid[p.position.y][p.position.x].players = updatedGrid[p.position.y][p.position.x].players.filter(id => id !== p.id);
-          addLog(state.language === 'zh' ? `${p.name} 被禁区吞噬。` : `${p.name} DIED IN ZONE.`);
-          return { ...p, status: 'DEAD' as const, stats: { ...stats, hp: 0 } };
+        
+        // 环境回合：所有存活玩家因为存活了一轮，股价微涨 +1%
+        let newP = updatePrice(p, 0.01);
+
+        const stats = { ...newP.stats, hunger: Math.max(0, newP.stats.hunger - 1), thirst: Math.max(0, newP.stats.thirst - 1) };
+        
+        if (updatedGrid[newP.position.y][newP.position.x].isRestricted) {
+          addLog(state.language === 'zh' ? `${newP.name} 被禁区吞噬。` : `${newP.name} DIED IN ZONE.`);
+          // 禁区死亡
+          return { ...newP, status: 'DEAD' as const, stats: { ...stats, hp: 0 }, market: { ...newP.market, price: 0, trend: 'DOWN' as const } };
         }
-        return { ...p, stats };
+        return { ...newP, stats };
       });
 
       const alive = updatedPlayers.filter(p => p.status === 'ALIVE');
@@ -288,7 +399,6 @@ export const gameReducer = (state: GameState, action: GameAction): GameState => 
         phase = 'GAME_OVER'; 
       }
       
-      // 关键：NEXT_TURN 时，如果有未清空的 LOOTING 状态，强制回归 ACTIVE
       return { 
         ...state, 
         turnCount: updatedTurnCount, 

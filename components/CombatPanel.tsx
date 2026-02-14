@@ -40,7 +40,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({ player, hoveredItem, l
         <div className="flex items-baseline gap-2">
           <span className={`text-2xl font-black ${color}`}>{current}</span>
           {diff !== 0 && (
-            <span className={`text-xs font-black animate-pulse ${diff > 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <span className={`text-xs font-black animate-pulse ${diff > 0 ? 'text-green-500' : 'text-[#F7931A]'}`}>
               {diff > 0 ? `+${diff}` : diff}
             </span>
           )}
@@ -57,7 +57,7 @@ export const CombatPanel: React.FC<CombatPanelProps> = ({ player, hoveredItem, l
       </h3>
 
       <div className="flex justify-around items-center border-b border-white/10 pb-4 mb-2">
-        <StatDisplay label="ATK" current={currentAtk} predicted={predictedAtk} color="text-red-500" />
+        <StatDisplay label="ATK" current={currentAtk} predicted={predictedAtk} color="text-[#F7931A]" />
         <StatDisplay label="DEF" current={currentDef} predicted={predictedDef} color="text-blue-500" />
       </div>
 

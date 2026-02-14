@@ -28,8 +28,8 @@ export const GameLog: React.FC<GameLogProps> = ({ logs }) => {
       >
         {logs.map((log, i) => {
           let textColor = 'text-white';
-          if (log.includes('WARNING') || log.includes('警告')) textColor = 'text-red-500 font-bold';
-          if (log.includes('SYSTEM') || log.includes('系统')) textColor = 'text-[#FF4500] font-black';
+          if (log.includes('WARNING') || log.includes('警告')) textColor = 'text-[#F7931A] font-bold';
+          if (log.includes('SYSTEM') || log.includes('系统')) textColor = 'text-[#F7931A] font-black';
           if (log.includes('COMBAT') || log.includes('战斗')) textColor = 'text-yellow-400';
           if (log.includes('VICTORY') || log.includes('胜利')) textColor = 'text-green-500 font-black';
 
